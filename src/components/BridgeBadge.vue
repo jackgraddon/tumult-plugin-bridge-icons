@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { MemberDecorationProps } from "@tumult/ui";
 
-import { config } from "../config.ts";
+import { config, matchRule } from "../config.ts";
 import { findIcon } from "../icons.ts";
 
 const props = defineProps<MemberDecorationProps>();
@@ -11,11 +11,7 @@ const props = defineProps<MemberDecorationProps>();
 // the host per roster rebuild, so it would not react to settings edits.
 const rule = computed(() => {
     if (!config.value.showInMemberList) return undefined;
-    const userId = props.member.userId.toLowerCase();
-    return config.value.rules.find(
-        (candidate) =>
-            candidate.enabled && candidate.prefix.trim() !== "" && userId.startsWith(candidate.prefix.toLowerCase()),
-    );
+    return matchRule(props.member.userId);
 });
 
 const icon = computed(() => (rule.value ? findIcon(rule.value.icon) : undefined));
@@ -31,12 +27,8 @@ const label = computed(() => `${rule.value?.label ?? "Bridge"} bridge`);
         :aria-label="label"
         :title="label"
     >
-        <svg
-            :viewBox="`0 0 ${icon.viewBox ?? 24} ${icon.viewBox ?? 24}`"
-            aria-hidden="true"
-            focusable="false"
-        >
-            <path :d="icon.path" />
+        <svg :viewBox="icon.viewBox ?? '0 0 24 24'" aria-hidden="true" focusable="false">
+            <path :d="icon.path" :transform="icon.transform" />
         </svg>
     </span>
 </template>

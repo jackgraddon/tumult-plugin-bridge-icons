@@ -2,9 +2,9 @@
     "$schema": "./tumult.plugin.schema.json",
     "id": "cc.jackgraddon.tumult.bridge-icons",
     "name": "Bridge Icons",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "author": "Jack Graddon",
-    "description": "Show circular bridge icons next to bridged users' names in the member list and timeline.",
+    "description": "Show circular bridge icons next to bridged users' names in the member list, DM list and timeline.",
     "permissions": ["member-decorations", "settings-tabs", "styles"],
     "entry": "plugin.js"
 }

@@ -40,22 +40,31 @@ devices.
 ## Where the icons show
 
 - **Member list** — uses Tumult's supported `addMemberDecoration()` API. The
-  badge appears at the end of the member row.
+  badge appears at the end of the member row, including the members pane of a
+  DM room.
+- **DM list** — the left-hand Direct Messages list has no decoration API (its
+  rows are rooms, not members). This plugin derives the other participant from
+  the room's membership, tags the matching row, and draws the badge inside the
+  name. It is best-effort and depends on Tumult's current `.tumult-dmlist`
+  markup.
 - **Timeline sender names** — Tumult has no sender-name decoration API, so this
   is best-effort injected CSS that matches the sender span's `title` attribute
   (the MXID). It works with Tumult's current `TimelineRow.vue` markup but may
   need updating if that markup changes. Long names ellipsize before the badge.
 
-Both locations can be toggled independently in the settings tab.
+The member-list and timeline locations can be toggled independently in the
+settings tab; the DM list follows the member-list toggle.
 
 ## Icons
 
 Brand glyphs are vendored as SVG path data in `src/icons.ts` and drawn on a
-brand-coloured circle. They come from [Simple Icons](https://simpleicons.org)
+brand-coloured circle. Most come from [Simple Icons](https://simpleicons.org)
 ([CC0](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md)).
-Everything is inline: the plugin makes no network requests at runtime. The
-timeline rules use `data:image/svg+xml,…` URLs, which is what Tumult's
-stylesheet guard allows.
+The iMessage speech bubble was extracted from
+[`IMessage logo.svg` on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:IMessage_logo.svg)
+(public-domain text logo), so it reads cleanly at badge size. Everything is
+inline: the plugin makes no network requests at runtime. The generated rules
+use `data:image/svg+xml,…` URLs, which is what Tumult's stylesheet guard allows.
 
 ## Development
 
@@ -67,17 +76,19 @@ pnpm typecheck      # checks against the vendored plugin types
 
 `src/index.ts` registers the decoration, settings tab and stylesheets.
 `src/config.ts` owns the rules and persistence, `src/icons.ts` the artwork,
-`src/components/` the two Vue components, `src/styles.ts` the base CSS, and
-`src/timeline.ts` generates the sender-name CSS from the current rules.
+`src/components/` the two Vue components, `src/styles.ts` the base CSS,
+`src/timeline.ts` generates the timeline/DM-list CSS, and `src/dmList.ts` tags
+DM rows using the client's room membership.
 
 Keep the manifest in `src/index.ts` and the release manifest
 `tumult.plugin.json` in step. There is no `<style>` block in any SFC: the
 release attaches only `plugin.js`, and the build refuses a sibling stylesheet.
 
 To release, bump `version` in both manifests, push a tag matching it (for
-example `v0.1.0`), and the release workflow builds, hashes and attaches
+example `v0.2.0`), and the release workflow builds, hashes and attaches
 `plugin.js` and `tumult.plugin.json`.
 
 ## License
 
-Do whatever you want with this plugin. The vendored Simple Icons paths are CC0.
+Do whatever you want with this plugin. The vendored Simple Icons paths are CC0;
+the iMessage logo is a public-domain text logo.

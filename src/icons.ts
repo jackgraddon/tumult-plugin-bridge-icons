@@ -1,8 +1,9 @@
 /**
  * The icons the plugin can draw.
  *
- * Glyph paths come from Simple Icons (https://simpleicons.org, CC0). They are
- * vendored here as plain `d` strings: a single path in a 24×24 viewBox, drawn
+ * Most glyph paths come from Simple Icons (https://simpleicons.org, CC0). The
+ * iMessage bubble comes from Wikimedia Commons' `IMessage logo.svg`
+ * (public-domain text logo). They are vendored here as plain `d` strings, drawn
  * in white on a brand-coloured circle. No network request is made at runtime,
  * which also keeps Tumult's stylesheet guard happy (only `data:` URLs are
  * injected).
@@ -13,10 +14,12 @@ export interface BridgeIcon {
     label: string;
     /** Circle background. The glyph itself is always white. */
     color: string;
-    /** SVG path data, in a square viewBox. */
+    /** SVG path data. */
     path: string;
-    /** Defaults to 24. */
-    viewBox?: number;
+    /** SVG viewBox. Defaults to `0 0 24 24`. */
+    viewBox?: string;
+    /** Optional transform applied to the path (used by the iMessage glyph). */
+    transform?: string;
 }
 
 export const BRIDGE_ICONS: readonly BridgeIcon[] = [
@@ -30,7 +33,11 @@ export const BRIDGE_ICONS: readonly BridgeIcon[] = [
         id: "imessage",
         label: "iMessage",
         color: "#34C759",
-        path: "M5.285 0A5.273 5.273 0 0 0 0 5.285v13.43A5.273 5.273 0 0 0 5.285 24h13.43A5.273 5.273 0 0 0 24 18.715V5.285A5.273 5.273 0 0 0 18.715 0ZM12 4.154a8.809 7.337 0 0 1 8.809 7.338A8.809 7.337 0 0 1 12 18.828a8.809 7.337 0 0 1-2.492-.303A8.656 7.337 0 0 1 5.93 19.93a9.929 7.337 0 0 0 1.54-2.155 8.809 7.337 0 0 1-4.279-6.283A8.809 7.337 0 0 1 12 4.154",
+        // White speech-bubble glyph from Wikimedia Commons' `IMessage logo.svg`
+        // (public-domain text logo), extracted from the 66.145836-unit
+        // viewBox and scaled into the shared 24-unit box.
+        path: "m -26.410149,157.29606 a 24.278298,20.222157 0 0 0 -24.278105,20.22202 24.278298,20.222157 0 0 0 11.79463,17.31574 27.365264,20.222157 0 0 1 -4.245218,5.94228 23.85735,20.222157 0 0 0 9.86038,-3.87367 24.278298,20.222157 0 0 0 6.868313,0.83768 24.278298,20.222157 0 0 0 24.2781059,-20.22203 24.278298,20.222157 0 0 0 -24.2781059,-20.22202 z",
+        transform: "matrix(0.36283463 0 0 0.36283463 21.582517 -52.917834)",
     },
     {
         id: "telegram",
@@ -92,10 +99,23 @@ export function findIcon(id: string): BridgeIcon | undefined {
     return BRIDGE_ICONS.find((icon) => icon.id === id);
 }
 
-/** The whole SVG, as a data URL safe to put in injected CSS. */
+/** The glyph alone, as a data URL safe to put in injected CSS. */
 export function iconDataUrl(icon: BridgeIcon): string {
+    const viewBox = icon.viewBox ?? "0 0 24 24";
+    const transform = icon.transform ? ` transform="${icon.transform}"` : "";
     const svg =
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${icon.viewBox ?? 24} ${icon.viewBox ?? 24}" ` +
-        `fill="#ffffff"><path d="${icon.path}"/></svg>`;
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" ` +
+        `fill="#ffffff"><path${transform} d="${icon.path}"/></svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** The complete coloured circle + glyph, for CSS that cannot use two layers. */
+export function badgeDataUrl(icon: BridgeIcon): string {
+    const transform = icon.transform ? ` transform="${icon.transform}"` : "";
+    const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+        `<circle cx="12" cy="12" r="12" fill="${icon.color}"/>` +
+        `<g transform="translate(4.8 4.8) scale(0.6)" fill="#ffffff">` +
+        `<path${transform} d="${icon.path}"/></g></svg>`;
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }

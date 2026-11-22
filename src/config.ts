@@ -118,3 +118,12 @@ watch(config, (value) => saveConfig(value), { deep: true });
 export function resetConfig(): void {
     config.value = createDefaultConfig();
 }
+
+/** First enabled rule whose full MXID prefix matches `userId` (case-insensitive). */
+export function matchRule(userId: string, value: BridgeIconsConfig = config.value): BridgeRule | undefined {
+    const lower = userId.toLowerCase();
+    return value.rules.find(
+        (candidate) =>
+            candidate.enabled && candidate.prefix.trim() !== "" && lower.startsWith(candidate.prefix.trim().toLowerCase()),
+    );
+}

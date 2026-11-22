@@ -53,8 +53,8 @@ function iconFor(id: string) {
                 <input v-model="rule.enabled" type="checkbox" :aria-label="`Enable ${rule.prefix}`" />
 
                 <span class="bi-icon-preview" :style="{ backgroundColor: iconFor(rule.icon)?.color }">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path :d="iconFor(rule.icon)?.path ?? ''" />
+                    <svg :viewBox="iconFor(rule.icon)?.viewBox ?? '0 0 24 24'" aria-hidden="true" focusable="false">
+                        <path :d="iconFor(rule.icon)?.path ?? ''" :transform="iconFor(rule.icon)?.transform" />
                     </svg>
                 </span>
 
