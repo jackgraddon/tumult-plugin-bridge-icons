@@ -1,0 +1,10 @@
+packages:
+  - "."
+
+# esbuild is Vite's bundler; its postinstall fetches the platform binary, so
+# without this the build cannot run. pnpm 11+ reads `allowBuilds`; the release
+# workflow still pins pnpm 10, which reads `onlyBuiltDependencies`.
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild

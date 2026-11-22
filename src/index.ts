@@ -1,46 +1,70 @@
 /**
- * Shrug — the template plugin.
+ * Bridge Icons — show circular platform badges after bridged users' names.
  *
- * Replace this file with your own. It stays small on purpose: one command, one
- * stylesheet, no Vue import. A logic-only plugin like this one runs in the
- * **sandbox lane** (Tumult derives that from the permissions below — you never
- * declare it), which means it cannot touch the DOM even if it wanted to.
- *
- * The manifest in `tumult.plugin.json` at the repository root is the same
- * manifest declared here; keep the two in step (the release workflow copies
- * this one into the release asset).
+ * Member-list badges use the supported member-decoration API. Timeline sender
+ * names have no decoration API, so those come from injected CSS keyed on the
+ * sender span's `title` (the MXID); see `timeline.ts` for the caveat.
  */
 import type { Plugin, PluginManifest } from "@tumult/ui";
+import { watch } from "vue";
+
+import BridgeBadge from "./components/BridgeBadge.vue";
+import SettingsTab from "./components/SettingsTab.vue";
+import { config } from "./config.ts";
+import { BASE_STYLES } from "./styles.ts";
+import { timelineStyles } from "./timeline.ts";
 
 const manifest: PluginManifest = {
-    id: "cc.example.shrug",
-    name: "Shrug",
-    version: "1.0.0",
-    author: "You",
-    description: "Append ¯\\_(ツ)_/¯ to a message with /shrug.",
-    permissions: ["commands", "styles"],
-    // Leave this out until you have published a release with it: Tumult
-    // refuses to install a plugin that asks for a newer API than it provides.
-    // minUI: "1.0.0",
+    id: "cc.jackgraddon.tumult.bridge-icons",
+    name: "Bridge Icons",
+    version: "0.1.0",
+    author: "Jack Graddon",
+    description: "Show circular bridge icons next to bridged users' names in the member list and timeline.",
+    permissions: ["member-decorations", "settings-tabs", "styles"],
 };
 
 export const plugin: Plugin = {
     manifest,
 
     install(ctx) {
-        ctx.injectStylesheet(`
-            .cc-example-shrug-message { font-family: var(--font-family-monospace, monospace); }
-        `);
+        const disposers: Array<() => void> = [];
 
-        ctx.addCommand({
-            name: "shrug",
-            description: "Append ¯\\_(ツ)_/¯ to your message",
-            usage: "<text>",
-            run: ({ args, roomId, client }) => {
-                const body = args ? `${args} ¯\\_(ツ)_/¯` : "¯\\_(ツ)_/¯";
-                return client.send(roomId, body);
-            },
-        });
+        disposers.push(ctx.injectStylesheet(BASE_STYLES));
+
+        let disposeTimeline = ctx.injectStylesheet(timelineStyles(config.value));
+        disposers.push(() => disposeTimeline());
+
+        // Rebuild just the generated timeline rules when settings change; the
+        // base stylesheet and registrations stay put.
+        disposers.push(
+            watch(
+                config,
+                () => {
+                    disposeTimeline();
+                    disposeTimeline = ctx.injectStylesheet(timelineStyles(config.value));
+                },
+                { deep: true },
+            ),
+        );
+
+        disposers.push(
+            ctx.addMemberDecoration({
+                id: "cc.jackgraddon.tumult.bridge-icons.badge",
+                component: BridgeBadge,
+            }),
+        );
+
+        disposers.push(
+            ctx.addSettingsTab({
+                id: "cc.jackgraddon.tumult.bridge-icons.settings",
+                title: "Bridge Icons",
+                component: SettingsTab,
+            }),
+        );
+
+        return () => {
+            for (const dispose of disposers.reverse()) dispose();
+        };
     },
 };
 

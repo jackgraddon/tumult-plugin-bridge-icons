@@ -1,137 +1,83 @@
-# Tumult plugin template
+# Bridge Icons for Tumult
 
-A starting point for a [Tumult](https://github.com/jackgraddon/tumult) plugin:
-a manifest, one source file, a bundle step, and a release workflow that
-publishes what Tumult installs.
+A [Tumult](https://github.com/jackgraddon/tumult) plugin that shows a small
+circular platform icon after the name of a user bridged through a
+[mautrix](https://mau.dev/mautrix) bridge — Discord, iMessage, Telegram,
+WhatsApp, Signal, and friends.
 
-## Use it
+A bridged Matrix ID usually starts with its platform's localpart, for example
+`@discord_123456789012345678:example.org`. Rules match that MXID prefix and
+render a coloured badge:
 
-1. **Create your repository.** "Use this template" on GitHub, or copy the
-   directory. Your repository URL is what people paste into Tumult.
-2. **Edit `src/index.ts` and `tumult.plugin.json`.** Keep the two manifests in
-   step: `tumult.plugin.json` is what Tumult reads, `src/index.ts` is what your
-   code carries (Tumult checks they agree before running anything).
-3. **Install and build.**
+> Full Name **(discord icon)**
 
-   ```sh
-   pnpm install
-   pnpm build          # writes dist/plugin.js
-   pnpm typecheck      # your code against the vendored plugin types
-   ```
+Rules are editable in a **Bridge Icons** settings tab, so a bridge set up with
+a different prefix still works.
 
-4. **Tag a release.** Push a tag matching the manifest `version`:
+## Install
 
-   ```sh
-   git tag v1.0.0 && git push origin v1.0.0
-   ```
+1. Install from Tumult: **Settings → Plugins → paste this repository URL**.
+2. Tumult shows the consent screen. This plugin uses the `member-decorations`,
+   `settings-tabs` and `styles` permissions, which puts it in the **trusted
+   lane** — it contributes Vue components and runs in the page.
+3. Open **Settings → Bridge Icons** to review or change the prefix rules.
 
-   The workflow builds, hashes and attaches `plugin.js` and
-   `tumult.plugin.json`. (Enable Actions in **Settings → Actions** on a fresh
-   repository; template repositories ship with workflows disabled.)
-5. **Install it in Tumult.** Settings → Plugins → paste your repository URL.
-   Tumult finds the release manifest, shows you the consent screen, and
-   verifies the hash before anything runs. The deployment fetches your release
-   *assets* (the manifest and the bundle) through its own origin, because GitHub
-   does not send CORS headers on release-asset downloads — a browser cannot read
-   them cross-origin. (The release *JSON* is CORS-open and is read directly.)
+The default rules cover Discord, iMessage, Telegram, WhatsApp, Signal,
+Instagram, Facebook, Slack, X (Twitter), LinkedIn and Skype. Each rule has:
 
-## What lives where
-
-| path | what it is |
+| field | meaning |
 |---|---|
-| `tumult.plugin.json` | the release manifest — id, permissions, `entry`, and (once released) `integrity`. Validated against `tumult.plugin.schema.json`. |
-| `src/index.ts` | your plugin: a manifest and `install(ctx)`. The template's example is a `/shrug` command. |
-| `src/shims/vue.ts` | the `vue` your bundle builds against — **generated** by `scripts/gen-vue-shim.mjs`. See below. |
-| `types/plugin.d.ts` | the whole plugin API, vendored so you need no Tumult packages installed. **Generated** in the Tumult repo — do not edit it here. |
-| `vite.config.ts` | the bundle step (Vite + `@vitejs/plugin-vue`). |
-| `scripts/gen-vue-shim.mjs` | regenerates `src/shims/vue.ts` from the installed `vue` package (`pnpm shim`). |
-| `scripts/make-release-manifest.mjs` | computes `integrity` for the built bundle. |
-| `.github/workflows/release.yml` | tag → build → hash → release. |
+| enabled | whether the rule is used |
+| MXID prefix | full prefix to match, e.g. `@discord_` |
+| icon | one of the bundled brand icons |
+| label | tooltip and accessible name, e.g. `Discord` |
 
-## How a plugin talks to Tumult
+Rules are checked in order and the first match wins. Edits save immediately to
+`localStorage` under `cc.jackgraddon.tumult.bridge-icons.config.v1`; there is a
+**Reset to defaults** button. Settings are per-browser, not synced between
+devices.
 
-Your bundle exports a `Plugin`: a manifest plus `install(ctx)`. Everything
-else goes through `ctx` — the chat client, the room selection, media
-resolution, and the seven extension points (timeline renderers, composer
-actions, slash commands, member decorations, settings tabs, stylesheets,
-workspace panes), each
-gated by a **permission** you declare:
+## Where the icons show
 
-```ts
-import type { Plugin } from "@tumult/ui";
+- **Member list** — uses Tumult's supported `addMemberDecoration()` API. The
+  badge appears at the end of the member row.
+- **Timeline sender names** — Tumult has no sender-name decoration API, so this
+  is best-effort injected CSS that matches the sender span's `title` attribute
+  (the MXID). It works with Tumult's current `TimelineRow.vue` markup but may
+  need updating if that markup changes. Long names ellipsize before the badge.
 
-export const plugin: Plugin = {
-    manifest: {
-        id: "cc.example.shrug",
-        name: "Shrug",
-        version: "1.0.0",
-        permissions: ["commands"],
-    },
-    install(ctx) {
-        ctx.addCommand({
-            name: "shrug",
-            description: "Append ¯\\_(ツ)_/¯ to your message",
-            run: ({ args, roomId, client }) =>
-                client.send(roomId, args ? `${args} ¯\\_(ツ)_/¯` : "¯\\_(ツ)_/¯"),
-        });
-    },
-};
+Both locations can be toggled independently in the settings tab.
+
+## Icons
+
+Brand glyphs are vendored as SVG path data in `src/icons.ts` and drawn on a
+brand-coloured circle. They come from [Simple Icons](https://simpleicons.org)
+([CC0](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md)).
+Everything is inline: the plugin makes no network requests at runtime. The
+timeline rules use `data:image/svg+xml,…` URLs, which is what Tumult's
+stylesheet guard allows.
+
+## Development
+
+```sh
+pnpm install
+pnpm build          # writes dist/plugin.js
+pnpm typecheck      # checks against the vendored plugin types
 ```
 
-Declare every permission you use. An undeclared one is not a warning: the call
-throws and the install is rolled back. An unknown one refuses the install
-outright, because Tumult can only ask the user to consent to capabilities it
-can name.
+`src/index.ts` registers the decoration, settings tab and stylesheets.
+`src/config.ts` owns the rules and persistence, `src/icons.ts` the artwork,
+`src/components/` the two Vue components, `src/styles.ts` the base CSS, and
+`src/timeline.ts` generates the sender-name CSS from the current rules.
 
-### Lanes: sandboxed vs in-page
+Keep the manifest in `src/index.ts` and the release manifest
+`tumult.plugin.json` in step. There is no `<style>` block in any SFC: the
+release attaches only `plugin.js`, and the build refuses a sibling stylesheet.
 
-Tumult **derives** your lane from your permissions — you never declare it, and
-neither does a reviewer:
-
-| permission | lane |
-|---|---|
-| `commands`, `composer-actions`, `styles` | **sandbox** — your code runs inside a Worker and reaches Tumult only through the message bridge. No DOM, no `window`. |
-| `timeline-renderers`, `member-decorations`, `settings-tabs`, `workspace-panes` | **trusted** — your code runs in the page, at Tumult's own trust level. Tumult warns the user clearly before installing. |
-
-Stay in the sandbox if you can. A plugin that only sends messages, reacts,
-transforms text or ships stylesheets can do a lot without ever needing the DOM.
-
-### Vue components
-
-A component permission (`timeline-renderers`, `member-decorations`,
-`settings-tabs`, `workspace-panes`) means you contribute a Vue component, which
-puts you in the trusted lane. Import `vue` normally for its types, and build
-through `vite.config.ts` with `@vitejs/plugin-vue` — Vite compiles your SFCs and
-aliases `vue` to `src/shims/vue.ts`. That shim forwards to the host's Vue
-instance, because a second copy of Vue in your bundle would render but could
-not `inject()` anything from Tumult.
-
-`vue` is a **devDependency** here on purpose: it is for types only. Do not
-bundle a copy. The shim is generated (`pnpm shim`) from the installed `vue`
-package, so a compiled SFC always finds the helpers it needs. Styles in SFC
-`<style>` blocks are extracted to a sibling file that the release does not
-attach — keep CSS in a TypeScript string and inject it with
-`ctx.injectStylesheet()`.
-
-### Compatibility
-
-`minUI` (the plugin API) and `minCore` (the chat-client contract) are enforced:
-Tumult refuses to install a plugin asking for a newer version than it
-provides. Omit them until you actually need them. The versions these vendored
-types describe are both `1.1.0` (`minUI` and `minCore`).
-
-## Versioning and updates
-
-Re-installing is the update path, and it always goes through the consent
-screen — so if a new version asks for permissions the user never agreed to,
-they are asked again. Bump `version` in both manifests and push a new tag.
-
-Your users' trust is bound to a hash, not to your repository name: Tumult
-verifies the bundle against the `integrity` in the release manifest, and
-re-verifies the stored copy on every start. Move a tag or replace a release
-asset and the installs that already exist keep working; new installs get what
-the new release says.
+To release, bump `version` in both manifests, push a tag matching it (for
+example `v0.1.0`), and the release workflow builds, hashes and attaches
+`plugin.js` and `tumult.plugin.json`.
 
 ## License
 
-Do whatever you want with this template. Your plugin is yours.
+Do whatever you want with this plugin. The vendored Simple Icons paths are CC0.

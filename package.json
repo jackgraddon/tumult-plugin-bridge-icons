@@ -1,9 +1,9 @@
 {
-    "name": "tumult-plugin-template",
+    "name": "tumult-plugin-bridge-icons",
     "private": true,
-    "version": "1.0.0",
+    "version": "0.1.0",
     "type": "module",
-    "description": "Template for a Tumult plugin: a manifest, a bundle, and a release workflow.",
+    "description": "Tumult plugin: circular bridge icons next to bridged users' names.",
     "scripts": {
         "build": "vite build",
         "typecheck": "vue-tsc -p tsconfig.json --noEmit",

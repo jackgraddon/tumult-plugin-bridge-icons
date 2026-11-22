@@ -1,10 +1,10 @@
 {
     "$schema": "./tumult.plugin.schema.json",
-    "id": "cc.example.shrug",
-    "name": "Shrug",
-    "version": "1.0.0",
-    "author": "You",
-    "description": "Append ¯\\_(ツ)_/¯ to a message with /shrug.",
-    "permissions": ["commands", "styles"],
+    "id": "cc.jackgraddon.tumult.bridge-icons",
+    "name": "Bridge Icons",
+    "version": "0.1.0",
+    "author": "Jack Graddon",
+    "description": "Show circular bridge icons next to bridged users' names in the member list and timeline.",
+    "permissions": ["member-decorations", "settings-tabs", "styles"],
     "entry": "plugin.js"
 }
